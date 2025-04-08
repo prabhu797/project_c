@@ -19,6 +19,9 @@ const handleCallSockets = require("./socketHandlers/call");
 
 const errorHandler = require("./middleware/errorHandler");
 
+const userRoutes = require("./routes/users");
+const friendRoutes = require("./routes/friends");
+
 // .env Structure 
 // PORT=5000
 // MONGO_URI=FROM_DATABASE
@@ -29,7 +32,7 @@ const errorHandler = require("./middleware/errorHandler");
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors: { origin: "*", methods: ["GET", "POST"] },
+    cors: { origin: "http://localhost:5173", methods: ["GET", "POST"], credentials: true },
 });
 
 app.use(cors({
@@ -40,6 +43,8 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/friends", friendRoutes);
 app.use((req, res, next) => {
     res.status(404).json({ error: "Route not found" });
 });
@@ -81,7 +86,7 @@ io.on("connection", (socket) => {
 
     socket.on("send-message", async ({ to, message }) => {
         const receiverSocketId = onlineUsers.get(to);
-
+        
         // Save to DB
         await Message.create({
             sender: socket.user.userId,
