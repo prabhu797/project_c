@@ -1,17 +1,30 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const { Server } = require("socket.io");
+
 const cors = require("cors");
 const http = require("http");
-const { Server } = require("socket.io");
+
 require("dotenv").config();
+
 const authRoutes = require("./routes/auth");
-const Message = require("./models/Message");
 const messageRoutes = require("./routes/messages");
+const notificationRoutes = require("./routes/notifications");
+
+const Message = require("./models/Message");
+
+const sendPushNotification = require("./utils/sendPushNotification");
+
+const handleCallSockets = require("./socketHandlers/call");
+
+const errorHandler = require("./middleware/errorHandler");
 
 // .env Structure 
 // PORT=5000
 // MONGO_URI=FROM_DATABASE
 // JWT_SECRET=supersecretjwtkey
+// VAPID_PUBLIC_KEY=GENERATE_AND_ASSIGN_A_VAPID_PUBLIC_KEY
+// VAPID_PRIVATE_KEY=GENERATE_AND_ASSIGN_A_VAPID_PRIVATE_KEY
 
 const app = express();
 const server = http.createServer(app);
@@ -19,10 +32,18 @@ const io = new Server(server, {
     cors: { origin: "*", methods: ["GET", "POST"] },
 });
 
-app.use(cors());
+app.use(cors({
+    origin: "http://localhost:5173", // your frontend URL
+    credentials: true, // if you use cookies or auth headers
+}));
 app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use((req, res, next) => {
+    res.status(404).json({ error: "Route not found" });
+});
+app.use(errorHandler);
 
 // Example route
 app.get("/", (req, res) => {
@@ -75,7 +96,10 @@ io.on("connection", (socket) => {
                 message,
             });
         }
+        await sendPushNotification(to, "📩 New Message", message);
     });
+
+    handleCallSockets(socket, io, onlineUsers);
 
     socket.on("disconnect", () => {
         onlineUsers.delete(userId);

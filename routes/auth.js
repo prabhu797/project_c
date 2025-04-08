@@ -4,10 +4,14 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const verifyToken = require("../middleware/auth");
 
+const validate = require("../middleware/validate");
+const { authLimiter } = require("../middleware/rateLimiter")
+const { registerSchema, loginSchema } = require("../validators/auth");
+
 const router = express.Router();
 
 // Register
-router.post("/register", async (req, res) => {
+router.post("/register", authLimiter, validate(registerSchema), async (req, res) => {
     const { username, password, displayName } = req.body;
 
     try {
@@ -26,7 +30,7 @@ router.post("/register", async (req, res) => {
 });
 
 // Login
-router.post("/login", async (req, res) => {
+router.post("/login", authLimiter, validate(loginSchema), async (req, res) => {
     const { username, password } = req.body;
 
     try {
