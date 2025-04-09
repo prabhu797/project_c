@@ -29,14 +29,20 @@ const friendRoutes = require("./routes/friends");
 // VAPID_PUBLIC_KEY=GENERATE_AND_ASSIGN_A_VAPID_PUBLIC_KEY
 // VAPID_PRIVATE_KEY=GENERATE_AND_ASSIGN_A_VAPID_PRIVATE_KEY
 
+let allowedOrigins = [
+    "http://10.80.3.30:5173",
+    "http://localhost:5173",
+    "https://prabhu797.github.io/chat-frontend"
+];
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors: { origin: "http://localhost:5173", methods: ["GET", "POST"], credentials: true },
+    cors: { origin: allowedOrigins, methods: ["GET", "POST"], credentials: true },
 });
 
 app.use(cors({
-    origin: "http://localhost:5173", // your frontend URL
+    origin: allowedOrigins, // your frontend URL
     credentials: true, // if you use cookies or auth headers
 }));
 app.use(express.json());
@@ -45,15 +51,15 @@ app.use("/api/messages", messageRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/friends", friendRoutes);
-app.use((req, res, next) => {
-    res.status(404).json({ error: "Route not found" });
-});
-app.use(errorHandler);
-
 // Example route
 app.get("/", (req, res) => {
     res.send("Chat App API Running!");
 });
+
+app.use((req, res, next) => {
+    res.status(404).json({ error: "Route not found" });
+});
+app.use(errorHandler);
 
 // MongoDB connection
 mongoose
