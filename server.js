@@ -32,7 +32,7 @@ const friendRoutes = require("./routes/friends");
 let allowedOrigins = [
     "http://10.80.3.30:5173",
     "http://localhost:5173",
-    "https://prabhu797.github.io/chat-frontend"
+    "https://prabhu797.github.io/"
 ];
 
 const app = express();
